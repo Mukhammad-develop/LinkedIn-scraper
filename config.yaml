@@ -1,0 +1,147 @@
+default:
+  browser:
+    headless: true
+    timeout: 30
+    window_size: [1920, 1080]
+    user_agent: null
+    disable_images: true
+    disable_javascript: false
+    page_load_strategy: "normal"
+  
+  scraping:
+    max_retries: 3
+    retry_delay: 1.0
+    request_delay: [1.0, 3.0]
+    max_profiles_per_session: 50
+    session_timeout: 1800
+    enable_quality_analysis: true
+    min_quality_score: 0.5
+  
+  rate_limit:
+    requests_per_minute: 10
+    requests_per_hour: 100
+    burst_limit: 3
+    cooldown_period: 300
+    jitter_range: [0.5, 2.0]
+    adaptive_delays: true
+  
+  output:
+    default_format: "json"
+    output_directory: "data"
+    filename_template: "profile_{timestamp}"
+    include_timestamp: true
+    compress_output: false
+    backup_outputs: true
+    max_backup_files: 10
+  
+  logging:
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file_enabled: true
+    file_path: "logs/scraper.log"
+    max_file_size: 10485760
+    backup_count: 5
+    console_enabled: true
+  
+  proxy:
+    enabled: false
+    http_proxy: null
+    https_proxy: null
+    proxy_list: []
+    rotation_enabled: false
+    test_url: "http://httpbin.org/ip"
+  
+  database:
+    enabled: false
+    type: "sqlite"
+    host: "localhost"
+    port: 5432
+    database: "linkedin_scraper"
+    username: null
+    password: null
+    connection_pool_size: 5
+
+development:
+  browser:
+    headless: false
+    timeout: 60
+    window_size: [1366, 768]
+    disable_images: false
+    disable_javascript: false
+  
+  scraping:
+    max_retries: 5
+    enable_quality_analysis: true
+    min_quality_score: 0.3
+  
+  rate_limit:
+    requests_per_minute: 5
+    requests_per_hour: 50
+    cooldown_period: 600
+  
+  logging:
+    level: "DEBUG"
+    console_enabled: true
+    file_enabled: true
+
+production:
+  browser:
+    headless: true
+    timeout: 45
+    disable_images: true
+    disable_javascript: true
+  
+  scraping:
+    max_retries: 2
+    session_timeout: 3600
+    enable_quality_analysis: true
+    min_quality_score: 0.7
+  
+  rate_limit:
+    requests_per_minute: 15
+    requests_per_hour: 200
+    burst_limit: 5
+    cooldown_period: 180
+  
+  output:
+    default_format: "json"
+    output_directory: "/var/data/linkedin-scraper"
+    compress_output: true
+    backup_outputs: true
+  
+  logging:
+    level: "WARNING"
+    file_enabled: true
+    file_path: "/var/log/linkedin-scraper/scraper.log"
+    console_enabled: false
+  
+  database:
+    enabled: true
+    type: "postgresql"
+    host: "db.example.com"
+    port: 5432
+    database: "linkedin_scraper_prod"
+    connection_pool_size: 10
+
+testing:
+  browser:
+    headless: true
+    timeout: 10
+  
+  scraping:
+    max_retries: 1
+    enable_quality_analysis: false
+  
+  rate_limit:
+    requests_per_minute: 30
+    requests_per_hour: 500
+    cooldown_period: 60
+  
+  output:
+    default_format: "json"
+    output_directory: "test_data"
+  
+  logging:
+    level: "ERROR"
+    console_enabled: true
+    file_enabled: false 
