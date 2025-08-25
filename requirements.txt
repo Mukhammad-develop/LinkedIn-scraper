@@ -18,4 +18,9 @@ dataclasses-json==0.6.3
 # Step 4: Multiple output format dependencies
 openpyxl==3.1.2
 jinja2==3.1.2
-pyyaml==6.0.1 
+pyyaml==6.0.1
+
+# Steps 7-15: Additional dependencies
+psutil==5.9.0
+flask==2.3.2
+asyncio==3.4.3 

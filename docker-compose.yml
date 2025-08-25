@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  linkedin-scraper:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: linkedin-scraper
+    ports:
+      - "5000:5000"  # Dashboard
+      - "8000:8000"  # API
+    environment:
+      - LINKEDIN_SCRAPER_BROWSER_HEADLESS=true
+      - LINKEDIN_SCRAPER_LOG_LEVEL=INFO
+      - LINKEDIN_SCRAPER_OUTPUT_DIR=/app/data
+      - LINKEDIN_SCRAPER_DB_ENABLED=true
+      - LINKEDIN_SCRAPER_DB_TYPE=postgresql
+      - LINKEDIN_SCRAPER_DB_HOST=postgres
+      - LINKEDIN_SCRAPER_DB_PORT=5432
+      - LINKEDIN_SCRAPER_DB_NAME=linkedin_scraper
+      - LINKEDIN_SCRAPER_DB_USER=scraper
+      - LINKEDIN_SCRAPER_DB_PASSWORD=scraper_password
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config.yaml:/app/config.yaml
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - scraper-network
+
+  postgres:
+    image: postgres:13
+    container_name: linkedin-scraper-db
+    environment:
+      - POSTGRES_DB=linkedin_scraper
+      - POSTGRES_USER=scraper
+      - POSTGRES_PASSWORD=scraper_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - scraper-network
+
+  redis:
+    image: redis:6-alpine
+    container_name: linkedin-scraper-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - scraper-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: linkedin-scraper-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - linkedin-scraper
+    restart: unless-stopped
+    networks:
+      - scraper-network
+
+volumes:
+  postgres_data:
+
+networks:
+  scraper-network:
+    driver: bridge 
