@@ -32,6 +32,9 @@ from ..utils.validators import URLValidator, DataValidator, validate_scraping_pa
 from ..utils.models import ProfileData, ScrapingConfig
 from ..utils.data_quality import DataQualityAnalyzer, QualityReport
 
+# Step 4: Import output manager
+from ..utils.output_manager import OutputManager, OutputFormat
+
 logger = logging.getLogger(__name__)
 
 
@@ -449,15 +452,46 @@ class LinkedInScraper:
         
         return skills_list if skills_list else ["Skills not found"]
     
-    def save_data(self, data, filename):
-        """Save scraped data with error handling"""
+    def save_data(self, data, filename, format_type=None, **kwargs):
+        """Save scraped data with multiple format support"""
         try:
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            logger.info(f"Data saved successfully to {filename}")
+            # Step 4: Use OutputManager for multiple formats
+            output_manager = OutputManager()
+            success = output_manager.save_data(data, filename, format_type, **kwargs)
+            
+            if success:
+                logger.info(f"Data saved successfully to {filename}")
+            else:
+                raise DataExtractionError(f"Failed to save data to {filename}")
+                
         except Exception as e:
             logger.error(f"Failed to save data to {filename}: {e}")
             raise DataExtractionError(f"Failed to save data: {e}")
+    
+    def export_multiple_formats(self, data, output_dir, base_name="profile", 
+                               formats=None, **kwargs):
+        """Export data in multiple formats simultaneously"""
+        try:
+            output_manager = OutputManager()
+            
+            if formats is None:
+                formats = [OutputFormat.JSON, OutputFormat.CSV, 
+                          OutputFormat.EXCEL, OutputFormat.HTML]
+            
+            results = output_manager.batch_export(
+                [data] if isinstance(data, dict) else data,
+                output_dir, 
+                formats, 
+                base_name,
+                **kwargs
+            )
+            
+            logger.info(f"Batch export completed: {results}")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Failed to export multiple formats: {e}")
+            raise DataExtractionError(f"Failed to export multiple formats: {e}")
     
     def close(self):
         """Close the browser with error handling"""

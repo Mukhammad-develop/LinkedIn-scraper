@@ -20,6 +20,9 @@ from utils.exceptions import (
 )
 from utils.validators import validate_scraping_parameters
 
+# Step 4: Import output manager
+from utils.output_manager import OutputManager, OutputFormat
+
 
 def setup_logging(verbose=False):
     """Setup logging configuration"""
@@ -133,6 +136,15 @@ Examples:
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Enable verbose logging')
     
+    # Step 4: Output format options
+    parser.add_argument('--format', '-f', 
+                       choices=['json', 'csv', 'xlsx', 'xml', 'html', 'yaml'],
+                       help='Output format (default: auto-detect from extension)')
+    parser.add_argument('--export-all', action='store_true',
+                       help='Export in all supported formats')
+    parser.add_argument('--template', 
+                       help='Custom template name for HTML output')
+    
     args = parser.parse_args()
     
     # Setup logging
@@ -189,10 +201,38 @@ Examples:
             profile_data = scraper.scrape_profile(validated_params['profile_url'])
             
             if profile_data:
-                scraper.save_data(profile_data, args.output)
-                
-                print(f"✅ Successfully scraped profile data!")
-                print(f"📁 Data saved to: {args.output}")
+                # Step 4: Handle multiple output formats
+                if args.export_all:
+                    # Export in all formats
+                    output_dir = os.path.dirname(args.output) or 'data'
+                    base_name = os.path.splitext(os.path.basename(args.output))[0]
+                    
+                    results = scraper.export_multiple_formats(
+                        profile_data, 
+                        output_dir, 
+                        base_name,
+                        template=args.template
+                    )
+                    
+                    print(f"✅ Successfully scraped and exported profile data!")
+                    print(f"📁 Exported to multiple formats in: {output_dir}")
+                    for format_type, success in results.items():
+                        status = "✅" if success else "❌"
+                        print(f"  {status} {format_type.upper()}")
+                        
+                else:
+                    # Single format output
+                    format_kwargs = {}
+                    if args.template:
+                        format_kwargs['template'] = args.template
+                    
+                    scraper.save_data(profile_data, args.output, args.format, **format_kwargs)
+                    
+                    print(f"✅ Successfully scraped profile data!")
+                    print(f"📁 Data saved to: {args.output}")
+                    
+                    if args.format:
+                        print(f"📄 Format: {args.format.upper()}")
                 
                 # Print enhanced summary
                 print("\n📊 Profile Summary:")
@@ -203,10 +243,19 @@ Examples:
                 print(f"Education entries: {len(profile_data.get('education', []))}")
                 print(f"Skills: {len(profile_data.get('skills', []))}")
                 
-                # Step 2: Show data quality score
-                quality_score = profile_data.get('quality_score', 0.0)
-                quality_emoji = "🟢" if quality_score > 0.7 else "🟡" if quality_score > 0.4 else "🔴"
-                print(f"Data Quality: {quality_emoji} {quality_score:.1%}")
+                # Show data quality score
+                if 'quality_report' in profile_data:
+                    quality_report = profile_data['quality_report']
+                    overall_score = quality_report.get('overall_score', 0.0)
+                    quality_emoji = "🟢" if overall_score > 0.7 else "🟡" if overall_score > 0.4 else "🔴"
+                    print(f"Data Quality: {quality_emoji} {overall_score:.1%}")
+                    print(f"Completeness: {quality_report.get('completeness_score', 0.0):.1%}")
+                    print(f"Issues Found: {quality_report.get('issues_count', 0)}")
+                else:
+                    # Fallback to simple quality score
+                    quality_score = profile_data.get('quality_score', 0.0)
+                    quality_emoji = "🟢" if quality_score > 0.7 else "🟡" if quality_score > 0.4 else "🔴"
+                    print(f"Data Quality: {quality_emoji} {quality_score:.1%}")
                 
                 print(f"\n🕒 Scraped at: {profile_data.get('scraped_at', 'N/A')}")
                 

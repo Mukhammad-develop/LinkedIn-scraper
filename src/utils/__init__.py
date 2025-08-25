@@ -7,4 +7,7 @@ from .validators import URLValidator, DataValidator, validate_scraping_parameter
 
 # Step 3: Advanced validation and data quality
 from .models import ProfileData, ScrapingConfig, DataQuality, ExperienceEntry, EducationEntry
-from .data_quality import DataQualityAnalyzer, QualityReport, QualityIssue, IssueType, Severity 
+from .data_quality import DataQualityAnalyzer, QualityReport, QualityIssue, IssueType, Severity
+
+# Step 4: Multiple output formats
+from .output_manager import OutputManager, OutputFormat 

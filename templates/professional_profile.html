@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if profiles|length == 1 %}{{ profiles[0].name }} - LinkedIn Profile{% else %}LinkedIn Profiles Export{% endif %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; 
+            color: #333; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+            color: white; 
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .stats { 
+            background: #f8f9fa; 
+            padding: 20px 40px; 
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat { text-align: center; }
+        .stat-number { font-size: 2em; font-weight: bold; color: #0077b5; }
+        .stat-label { color: #666; font-size: 0.9em; }
+        .profile { 
+            padding: 40px; 
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+        }
+        .profile:last-child { border-bottom: none; }
+        .profile-header { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 30px;
+        }
+        .profile-avatar { 
+            width: 120px; 
+            height: 120px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #0077b5, #00a0dc);
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: white;
+            font-size: 3em;
+            font-weight: bold;
+            margin-right: 30px;
+        }
+        .profile-info h2 { 
+            font-size: 2.2em; 
+            color: #0077b5; 
+            margin-bottom: 10px;
+        }
+        .profile-info .headline { 
+            font-size: 1.3em; 
+            color: #666; 
+            margin-bottom: 8px;
+        }
+        .profile-info .location { 
+            color: #888; 
+            font-size: 1.1em;
+        }
+        .profile-url { 
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .section { 
+            margin: 30px 0;
+        }
+        .section h3 { 
+            font-size: 1.5em; 
+            color: #0077b5; 
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .about { 
+            font-size: 1.1em; 
+            line-height: 1.8; 
+            color: #555;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #0077b5;
+        }
+        .experience-item, .education-item { 
+            background: #f8f9fa; 
+            margin: 15px 0; 
+            padding: 20px; 
+            border-radius: 10px;
+            border-left: 4px solid #00a0dc;
+            transition: transform 0.2s ease;
+        }
+        .experience-item:hover, .education-item:hover {
+            transform: translateX(5px);
+        }
+        .skills-container { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px;
+        }
+        .skill { 
+            background: linear-gradient(135deg, #0077b5, #00a0dc);
+            color: white; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .quality-report { 
+            background: linear-gradient(135deg, #e8f4fd, #f0f8ff);
+            padding: 25px; 
+            border-radius: 15px; 
+            margin: 30px 0;
+            border: 1px solid #b8daff;
+        }
+        .quality-header { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 20px;
+        }
+        .quality-header h3 { 
+            margin: 0 0 0 10px; 
+            color: #0056b3;
+        }
+        .quality-metrics { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 20px;
+        }
+        .quality-metric { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 10px;
+            text-align: center;
+        }
+        .quality-score { 
+            font-size: 2em; 
+            font-weight: bold; 
+            margin-bottom: 5px;
+        }
+        .score-excellent { color: #28a745; }
+        .score-good { color: #17a2b8; }
+        .score-fair { color: #ffc107; }
+        .score-poor { color: #dc3545; }
+        .footer { 
+            background: #f8f9fa; 
+            padding: 20px 40px; 
+            text-align: center; 
+            color: #666;
+            font-size: 0.9em;
+        }
+        @media (max-width: 768px) {
+            .profile-header { flex-direction: column; text-align: center; }
+            .profile-avatar { margin-right: 0; margin-bottom: 20px; }
+            .stats { flex-direction: column; gap: 20px; }
+            .quality-metrics { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% if profiles|length == 1 %}Professional Profile{% else %}LinkedIn Profiles Export{% endif %}</h1>
+            <p>Generated on {{ generated_at or "Unknown Date" }}</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">{{ profiles|length }}</div>
+                <div class="stat-label">Profile{{ 's' if profiles|length != 1 else '' }}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">{{ profiles|sum(attribute='experience')|length if profiles else 0 }}</div>
+                <div class="stat-label">Total Experience Entries</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">{{ profiles|sum(attribute='skills')|length if profiles else 0 }}</div>
+                <div class="stat-label">Total Skills</div>
+            </div>
+        </div>
+        
+        {% for profile in profiles %}
+        <div class="profile">
+            <div class="profile-url">{{ profile.url }}</div>
+            
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    {{ profile.name[0] if profile.name else '?' }}
+                </div>
+                <div class="profile-info">
+                    <h2>{{ profile.name or 'Unknown Name' }}</h2>
+                    {% if profile.headline %}
+                    <div class="headline">{{ profile.headline }}</div>
+                    {% endif %}
+                    {% if profile.location %}
+                    <div class="location">📍 {{ profile.location }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if profile.about %}
+            <div class="section">
+                <h3>About</h3>
+                <div class="about">{{ profile.about }}</div>
+            </div>
+            {% endif %}
+            
+            {% if profile.experience and profile.experience|length > 0 %}
+            <div class="section">
+                <h3>Experience</h3>
+                {% for exp in profile.experience %}
+                <div class="experience-item">
+                    {% if exp is mapping %}
+                        <strong>{{ exp.title or 'Position' }}</strong>
+                        {% if exp.company %} at {{ exp.company }}{% endif %}
+                        {% if exp.duration %}<br><small>{{ exp.duration }}</small>{% endif %}
+                        {% if exp.description %}<br>{{ exp.description }}{% endif %}
+                    {% else %}
+                        {{ exp }}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if profile.education and profile.education|length > 0 %}
+            <div class="section">
+                <h3>Education</h3>
+                {% for edu in profile.education %}
+                <div class="education-item">
+                    {% if edu is mapping %}
+                        <strong>{{ edu.degree or 'Degree' }}</strong>
+                        {% if edu.institution %} at {{ edu.institution }}{% endif %}
+                        {% if edu.field_of_study %}<br>{{ edu.field_of_study }}{% endif %}
+                        {% if edu.duration %}<br><small>{{ edu.duration }}</small>{% endif %}
+                    {% else %}
+                        {{ edu }}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if profile.skills and profile.skills|length > 0 %}
+            <div class="section">
+                <h3>Skills</h3>
+                <div class="skills-container">
+                    {% for skill in profile.skills %}
+                    <span class="skill">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if profile.quality_report %}
+            <div class="quality-report">
+                <div class="quality-header">
+                    <span style="font-size: 1.5em;">📊</span>
+                    <h3>Data Quality Report</h3>
+                </div>
+                <div class="quality-metrics">
+                    <div class="quality-metric">
+                        <div class="quality-score {% if profile.quality_report.overall_score >= 0.8 %}score-excellent{% elif profile.quality_report.overall_score >= 0.6 %}score-good{% elif profile.quality_report.overall_score >= 0.4 %}score-fair{% else %}score-poor{% endif %}">
+                            {{ "%.0f%%" | format(profile.quality_report.overall_score * 100) }}
+                        </div>
+                        <div>Overall Quality</div>
+                    </div>
+                    <div class="quality-metric">
+                        <div class="quality-score score-good">
+                            {{ "%.0f%%" | format(profile.quality_report.completeness_score * 100) }}
+                        </div>
+                        <div>Completeness</div>
+                    </div>
+                    <div class="quality-metric">
+                        <div class="quality-score score-fair">
+                            {{ profile.quality_report.issues_count }}
+                        </div>
+                        <div>Issues Found</div>
+                    </div>
+                </div>
+                {% if profile.quality_report.suggestions %}
+                <div style="margin-top: 20px;">
+                    <strong>Suggestions:</strong>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        {% for suggestion in profile.quality_report.suggestions %}
+                        <li>{{ suggestion }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #666;">
+                <small>Scraped on {{ profile.scraped_at or 'Unknown Date' }}</small>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="footer">
+            <p>Generated by LinkedIn Scraper - Professional Profile Export</p>
+            <p>This data is for informational purposes only</p>
+        </div>
+    </div>
+</body>
+</html> 
