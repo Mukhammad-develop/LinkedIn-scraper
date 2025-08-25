@@ -10,4 +10,7 @@ fake-useragent==1.4.0
 # Step 2: Error handling and validation dependencies
 pydantic==2.5.0
 typing-extensions==4.8.0
-validators==0.22.0 
+validators==0.22.0
+
+# Step 3: Advanced data validation dependencies
+dataclasses-json==0.6.3 

@@ -28,6 +28,10 @@ from ..utils.exceptions import (
 from ..utils.retry import retry, with_circuit_breaker, exponential_backoff
 from ..utils.validators import URLValidator, DataValidator, validate_scraping_parameters
 
+# Step 3: Import advanced validation models
+from ..utils.models import ProfileData, ScrapingConfig
+from ..utils.data_quality import DataQualityAnalyzer, QualityReport
+
 logger = logging.getLogger(__name__)
 
 
@@ -132,17 +136,39 @@ class LinkedInScraper:
             self._check_for_errors()
             
             # Extract profile data
-            profile_data = self._extract_profile_data(validated_url)
+            raw_profile_data = self._extract_profile_data(validated_url)
             
-            # Step 2: Validate extracted data
-            validated_data = DataValidator.validate_profile_data(profile_data)
-            
-            # Calculate data quality score
-            quality_score = DataValidator.calculate_data_quality_score(validated_data)
-            validated_data['quality_score'] = quality_score
-            
-            logger.info(f"Successfully scraped profile with quality score: {quality_score:.2f}")
-            return validated_data
+            # Step 3: Advanced validation with Pydantic models
+            try:
+                validated_profile = ProfileData(**raw_profile_data)
+                
+                # Step 3: Perform comprehensive data quality analysis
+                quality_analyzer = DataQualityAnalyzer()
+                quality_report = quality_analyzer.analyze_profile_quality(raw_profile_data)
+                
+                # Convert to dictionary and add quality metrics
+                profile_data = validated_profile.to_dict()
+                profile_data['quality_report'] = {
+                    'overall_score': quality_report.overall_score,
+                    'completeness_score': quality_report.completeness_score,
+                    'accuracy_score': quality_report.accuracy_score,
+                    'consistency_score': quality_report.consistency_score,
+                    'issues_count': len(quality_report.issues),
+                    'suggestions': quality_report.suggestions[:3]  # Top 3 suggestions
+                }
+                
+                logger.info(f"Successfully scraped and validated profile with quality score: {quality_report.overall_score:.2f}")
+                return profile_data
+                
+            except Exception as validation_error:
+                logger.warning(f"Pydantic validation failed: {validation_error}")
+                # Fallback to Step 2 validation
+                validated_data = DataValidator.validate_profile_data(raw_profile_data)
+                quality_score = DataValidator.calculate_data_quality_score(validated_data)
+                validated_data['quality_score'] = quality_score
+                
+                logger.info(f"Successfully scraped profile with fallback validation, quality score: {quality_score:.2f}")
+                return validated_data
             
         except (InvalidProfileURLError, ProfileNotFoundError, ProfilePrivateError) as e:
             logger.error(f"Profile error: {e}")
