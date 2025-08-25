@@ -10,4 +10,7 @@ from .models import ProfileData, ScrapingConfig, DataQuality, ExperienceEntry, E
 from .data_quality import DataQualityAnalyzer, QualityReport, QualityIssue, IssueType, Severity
 
 # Step 4: Multiple output formats
-from .output_manager import OutputManager, OutputFormat 
+from .output_manager import OutputManager, OutputFormat
+
+# Step 5: Rate limiting and anti-detection
+from .rate_limiter import RateLimitingManager, RateLimitConfig, AntiDetectionManager, DetectionAvoidance 

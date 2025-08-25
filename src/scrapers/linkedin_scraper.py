@@ -35,13 +35,16 @@ from ..utils.data_quality import DataQualityAnalyzer, QualityReport
 # Step 4: Import output manager
 from ..utils.output_manager import OutputManager, OutputFormat
 
+# Step 5: Import rate limiting and anti-detection
+from ..utils.rate_limiter import RateLimitingManager, RateLimitConfig, DetectionAvoidance
+
 logger = logging.getLogger(__name__)
 
 
 class LinkedInScraper:
     """Enhanced LinkedIn profile scraper with robust error handling"""
     
-    def __init__(self, headless=True, timeout=30, max_retries=3):
+    def __init__(self, headless=True, timeout=30, max_retries=3, rate_limit_config=None):
         """
         Initialize the scraper with Chrome WebDriver and error handling
         
@@ -49,11 +52,15 @@ class LinkedInScraper:
             headless: Run browser in headless mode
             timeout: Browser timeout in seconds
             max_retries: Maximum retry attempts for operations
+            rate_limit_config: Rate limiting configuration
         """
         self.timeout = timeout
         self.max_retries = max_retries
         self.driver = None
         self.wait = None
+        
+        # Step 5: Initialize rate limiting and anti-detection
+        self.rate_limiter = RateLimitingManager(rate_limit_config)
         
         try:
             self.driver = self._setup_driver(headless)
